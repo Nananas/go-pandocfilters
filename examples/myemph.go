@@ -16,9 +16,14 @@ func main() {
 
 func myemph(k string, v Any, f string, meta Node) Any {
 	if k == "Emph" && f == "latex" {
-		l := NewList(latex("\\myemph{"))
-		l = append(l, AsList(v)...)
-		return append(l, latex("}"))
+		return NewListUnpack(
+			latex("\\myemph{"),
+			AsList(v),
+			latex("}"),
+		)
+		// l := NewList(latex("\\myemph{"))
+		// l = append(l, AsList(v)...)
+		// return append(l, latex("}"))
 	}
 
 	return nil

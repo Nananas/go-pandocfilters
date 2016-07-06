@@ -36,18 +36,13 @@ func theorems(key string, value Any, format string, meta Node) Any {
 					label = "\\label{" + ident + "}"
 				}
 
-				l := NewList(latex("\\begin{theorem}" + label))
-				l = append(l, contents...)
-				return append(l, latex("\\end{theorem}"))
+				return NewListUnpack(
+					latex("\\begin{theorem}"+label),
+					contents,
+					latex("\\end{theorem}"),
+				)
 			} else if format == "html" || format == "html5" {
 				theoremcount++
-
-				// newcontent := NewList(
-				// 	html("<dt>Theorem "+strconv.Itoa(theoremcount)+"</dt>"),
-				// 	html("<dd>"))
-
-				// newcontent = append(newcontent, contents...)
-				// newcontent = append(newcontent, html("</dd>\n</dl>"))
 
 				newcontent := NewListUnpack(
 					html("<dt>Theorem "+strconv.Itoa(theoremcount)+"</dt>"),
