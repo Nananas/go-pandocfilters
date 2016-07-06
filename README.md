@@ -2,7 +2,7 @@
 pandocfilters
 =============
 
-A Go module for writing `pandoc <http://pandoc.org/>`_ filters
+A Go module for writing [pandoc](<http://pandoc.org/>) filters
 
 What are pandoc filters?
 --------------------------
@@ -18,9 +18,7 @@ or using the ``--filter`` (or ``-F``) command-line option. ::
     pandoc --filter ./caps -s
 
 For more on pandoc filters, see the pandoc documentation under ``--filter``
-and `the tutorial on writing filters`__.
-
-__ http://johnmacfarlane.net/pandoc/scripting.html
+and [the tutorial on writing filters](http://johnmacfarlane.net/pandoc/scripting.html).
 
 <!-- Compatibility
 ----------------
@@ -42,13 +40,13 @@ Pandocfilters Types
 The ``pandocfilters`` package uses the following types:
 
 
-``type Any interface{}``
+**``type Any interface{}``:**
   For readability and less writing. All objects without clear type are of `Any`type.
 
-``type List []Any``
+**``type List []Any``**:
   A standard array of any types, can be mixed types.
 
-``type Node map[string]Any``
+**``type Node map[string]Any``**:
   A map type.
 
 These types are only for readibility and ease of code writing and are a straight conversion from the unmarshalled json types.
@@ -58,12 +56,12 @@ Available functions
 
 The ``pandocfilters`` package exports the following functions:
 
-``Walk(x Any, action Action, format string, meta Node)``
+**``Walk(x Any, action Action, format string, meta Node)``**:
   Walk a tree, applying an action to every object.
   Returns a modified tree.
 
-``ToJSONFilter(action Action)``
-``ToJSONFilters(actions []Action)``
+**``ToJSONFilter(action Action)``**, 
+**``ToJSONFilters(actions []Action)``**:
   Converts a list of actions into a filter that reads a JSON-formatted
   pandoc document from stdin, transforms it by walking the tree
   with the actions, and returns a new JSON-formatted pandoc document
@@ -75,7 +73,7 @@ The ``pandocfilters`` package exports the following functions:
   the list to which the target object belongs.    (So, returning an
   empty list deletes the object.)
 
-``Attributes(attrs Node)``
+**``Attributes(attrs Node)``**:
   Returns an attribute list, constructed from the
   Node ``attrs``.
 
@@ -88,7 +86,8 @@ of its use (from `examples/caps.go`)::
     Pandoc filter to convert all regular text to uppercase.
     Code, link URLs, etc. are not affected.
     */
-        package main
+
+    package main
     import (
         "strings"
         . "github.com/nananas/Pandocfilters/pandocfilters"
@@ -113,36 +112,36 @@ The examples subdirectory in the source repository contains the
 following filters. These filters should provide a useful starting point
 for developing your own pandocfilters.
 
-``caps.py``
+**``caps.py``**:
     Pandoc filter to convert all regular text to uppercase. Code, link
     URLs, etc. are not affected.
 
-``comments.py``
+**``comments.py``**:
     Pandoc filter that causes everything between
     ``<!-- BEGIN COMMENT -->`` and ``<!-- END COMMENT -->`` to be ignored.
     The comment lines must appear on lines by themselves, with blank
     lines surrounding
 
-``deemph.py``
+**``deemph.py``**:
     Pandoc filter that causes emphasized text to be displayed in ALL
     CAPS.
 
-``deflists.py``
+**``deflists.py``**:
     Pandoc filter to convert definition lists to bullet lists with the
     defined terms in strong emphasis (for compatibility with standard
     markdown).
 
-``metavars.py``
+**``metavars.py``**:
     Pandoc filter to allow interpolation of metadata fields into a
     document. ``%{fields}`` will be replaced by the field's value, assuming
     it is of the type ``MetaInlines`` or ``MetaString``.
 
-``myemph.py``
+**``myemph.py``**:
     Pandoc filter that causes emphasis to be rendered using the custom
     macro ``\myemph{...}`` rather than ``\emph{...}`` in latex. Other output
     formats are unaffected.
 
-``theorem.py``
+**``theorem.py``**:
     Pandoc filter to convert divs with ``class="theorem"`` to LaTeX theorem
     environments in LaTeX output, and to numbered theorems in HTML
     output.
