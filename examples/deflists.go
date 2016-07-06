@@ -14,7 +14,7 @@ func main() {
 	ToJSONFilter(deflists)
 }
 
-func deflists(key string, val Any, format string, meta string) Any {
+func deflists(key string, val Any, format string, meta Node) Any {
 	if key == "DefinitionList" {
 		array := Empty()
 		value := val.(List)

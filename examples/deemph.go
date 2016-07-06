@@ -17,7 +17,7 @@ func main() {
 	ToJSONFilter(deemph)
 }
 
-func deemph(key string, val Any, format string, meta string) Any {
+func deemph(key string, val Any, format string, meta Node) Any {
 	if key == "Emph" {
 		return Walk(val, caps, format, meta)
 	}
@@ -25,7 +25,7 @@ func deemph(key string, val Any, format string, meta string) Any {
 }
 
 // copied from caps.go
-func caps(k string, v Any, format string, meta string) Any {
+func caps(k string, v Any, format string, meta Node) Any {
 
 	if k == "Str" {
 		// fmt.Println(v)

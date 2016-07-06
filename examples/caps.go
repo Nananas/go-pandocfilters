@@ -17,7 +17,7 @@ func main() {
 	ToJSONFilter(caps)
 }
 
-func caps(k string, v Any, format string, meta string) Any {
+func caps(k string, v Any, format string, meta Node) Any {
 	if k == "Str" {
 		return Str(strings.ToUpper(AsString(v)))
 	}

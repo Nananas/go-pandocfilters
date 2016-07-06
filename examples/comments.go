@@ -22,7 +22,7 @@ func main() {
 	ToJSONFilter(comment)
 }
 
-func comment(k string, v Any, format string, meta string) Any {
+func comment(k string, v Any, format string, meta Node) Any {
 
 	if k == "RawBlock" {
 		// format := v.([]interface{})[0].(string)

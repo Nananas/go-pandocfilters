@@ -2,6 +2,7 @@ package pandocfilters
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,7 +10,15 @@ import (
 )
 
 // IS KEY ALWAYS A STRING
-type Action func(k string, v Any, fmt string, meta string) Any
+// Action function type used as Filter
+//
+// Key is the type of the pandoc object as string(e.g. 'Str', 'Para'),
+// Value is the contents of the object as <Any>(e.g. a string for 'Str',
+// a list of inline elements for 'Para', typed as <Any>),
+// Format is the target output format as string (which will be taken
+// for the first command line argument if present),
+// and Meta is the document's metadata as <Node>.
+type Action func(key string, value Any, format string, meta Node) Any
 type Any interface{}
 type List []Any
 type Node map[string]Any
@@ -18,6 +27,18 @@ func ToJSONFilter(action Action) {
 	ToJSONFilters([]Action{action})
 }
 
+// Converts a list of actions <Action> into a filter that reads a JSON-formatted
+// pandoc document from stdin, transforms it by walking the tree
+// with the actions, and returns a new JSON-formatted pandoc document
+// to stdout.
+//
+// The argument is a list of functions of type <Action>,
+// If the function returns None, the object to which it applies
+// will remain unchanged.  If it returns an object, the object will
+// be replaced.    If it returns a list, the list will be spliced in to
+// the list to which the target object belongs.    (So, returning an
+// empty list deletes the object.)
+//
 func ToJSONFilters(actions []Action) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	// fmt.Println("START")
@@ -36,10 +57,14 @@ func ToJSONFilters(actions []Action) {
 	}
 
 	c := convert(j)
+	// fmt.Println(m)
+	// fmt.Println(AsNode(m)["author"])
+	meta := AsNode(AsNode(AsList(c)[0])["unMeta"])
 
 	r := reduce(
 		func(x Any, action Action) Any {
-			return Walk(x, action, format, "")
+			return Walk(x, action, format, meta)
+			// return Walk(x, action, format, NewNode())
 		},
 		actions, c)
 
@@ -54,20 +79,25 @@ func ToJSONFilters(actions []Action) {
 }
 
 func convert(input interface{}) Any {
+
 	switch t := input.(type) {
-	case []interface{}:
+	case List:
+		fmt.Println("Already converted...")
+	case []interface{}: // List
 		list := make(List, 0)
 		for _, e := range t {
 			list = append(list, convert(e))
 		}
 
 		return list
-	case map[string]interface{}:
+	case Node:
+		fmt.Println("Already converted...")
+	case map[string]interface{}: // Node
 		Node := make(Node, 0)
 		tt, ok := t["t"]
 		if !ok {
 			for k, v := range t {
-				Node[k] = v
+				Node[k] = convert(v)
 			}
 		} else {
 			Node["t"] = tt
@@ -76,13 +106,18 @@ func convert(input interface{}) Any {
 		return Node
 	case string: // end of tree, leaf
 		return string(input.(string))
+	case float64:
+		return float64(input.(float64))
 	default:
-		log.Fatal("this should not happen")
+		log.Println(input, ": is :", reflect.TypeOf(input))
+		log.Fatal("[FATAL] This should not happen")
 	}
 	return nil
 }
 
-func Walk(x Any, action Action, format string, meta string) Any {
+// Walk a tree, applying an action to every object.
+// Returns a modified tree.
+func Walk(x Any, action Action, format string, meta Node) Any {
 	switch v := x.(type) {
 	case List:
 		array := NewList()
@@ -145,6 +180,23 @@ func NewList(args ...Any) List {
 
 	return l
 }
+
+func NewListUnpack(args ...Any) List {
+	l := make(List, 0)
+	for _, e := range args {
+		switch t := e.(type) {
+		case List:
+			for _, ee := range t {
+				l = append(l, ee)
+			}
+		default:
+			l = append(l, t)
+		}
+	}
+
+	return l
+}
+
 func reduce(function func(c Any, n Action) Any, seq []Action, init Any) Any {
 
 	current := init
@@ -158,6 +210,31 @@ func reduce(function func(c Any, n Action) Any, seq []Action, init Any) Any {
 
 func Empty() List {
 	return NewList()
+}
+
+// Returns an attribute list, constructed from the
+// dictionary attrs.
+func Attributes(attributes Node) List {
+	ident, ok := attributes["id"]
+	if !ok {
+		ident = ""
+	}
+
+	classes, ok := attributes["classes"]
+	if !ok {
+		classes = []string{}
+	}
+
+	keyvals := NewList()
+	for k, v := range attributes {
+		if k != "classes" && k != "id" {
+			l := NewList(k, v)
+			keyvals = append(keyvals, l)
+		}
+	}
+
+	result := NewList(ident, classes, keyvals)
+	return result
 }
 
 func elt(eltType string, numargs int) EltFunc {
@@ -266,7 +343,8 @@ func AsString(input Any) string {
 	case string:
 		return t
 	default:
-		log.Fatal("Trying to convert to String, but not a string type (", reflect.TypeOf(input), ")")
+		log.Println("Trying to convert to String, but not a string type (", reflect.TypeOf(input), ") for object: ", input)
+		panic("")
 	}
 
 	return ""
@@ -278,7 +356,8 @@ func AsNode(input Any) Node {
 	case Node:
 		return t
 	default:
-		log.Fatal("Trying to convert to Node, but not a node type (", reflect.TypeOf(input), ")")
+		log.Println("Trying to convert to Node, but not a node type (", reflect.TypeOf(input), ") for object: ", input)
+		panic("")
 	}
 
 	return nil
@@ -290,7 +369,8 @@ func AsList(input Any) List {
 	case List:
 		return t
 	default:
-		log.Fatal("Trying to convert to List, but not a list type (", reflect.TypeOf(input), ")")
+		log.Println("Trying to convert to List, but not a list type (", reflect.TypeOf(input), ") for object: ", input)
+		panic("")
 	}
 
 	return nil

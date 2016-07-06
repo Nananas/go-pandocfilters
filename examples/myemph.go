@@ -14,17 +14,11 @@ func main() {
 	ToJSONFilter(myemph)
 }
 
-func myemph(k string, v Any, f string, meta string) Any {
-	// fmt.Println(f)
-	// fmt.Println(v)
-	// return nil
+func myemph(k string, v Any, f string, meta Node) Any {
 	if k == "Emph" && f == "latex" {
-		// return append(NewList(latex("\\myemph{")), AsList(v)...)
 		l := NewList(latex("\\myemph{"))
 		l = append(l, AsList(v)...)
 		return append(l, latex("}"))
-
-		// latex("}"))
 	}
 
 	return nil
