@@ -137,8 +137,13 @@ func NewNode() Node {
 	return make(Node, 0)
 }
 
-func NewList() List {
-	return make(List, 0)
+func NewList(args ...Any) List {
+	l := make(List, 0)
+	for _, e := range args {
+		l = append(l, e)
+	}
+
+	return l
 }
 func reduce(function func(c Any, n Action) Any, seq []Action, init Any) Any {
 

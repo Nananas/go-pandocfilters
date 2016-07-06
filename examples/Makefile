@@ -5,7 +5,7 @@ PDF = $(subst .md,.pdf, $(SAMPLES))
 
 .PHONY: ${EXE}
 
-all: ${EXE} ${SAMPLES} ${PDF} show
+all: ${EXE} ${SAMPLES} ${PDF}
 
 show:
 	evince ${PDF}
