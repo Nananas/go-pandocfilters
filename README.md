@@ -2,7 +2,7 @@
 pandocfilters
 =============
 
-A Go module for writing [pandoc](<http://pandoc.org/>) filters
+A Go module for writing [pandoc](http://pandoc.org/) filters
 
 What are pandoc filters?
 --------------------------
@@ -33,12 +33,15 @@ that breaks backwards compatibility. Consequently, you should use:
 Installing
 --------------
 
-Using `git clone`?
+Using `git clone`? I still need to figure out `go get`.
 
 Pandocfilters Types
 -------------------
-The ``pandocfilters`` package uses the following types:
+In contrast to python, go is a statically typed language. As such, types are needed in every step. Parsing json to go types results in quite ugly `interface{}, []interface{} and map[string]interface{}` types.
 
+The following types are introduced for readability and are a straight conversion from the un-marshalled json types.
+
+The ``pandocfilters`` package uses the following types:
 
 **``type Any interface{}``:**
   For readability and less writing. All objects without clear type are of `Any`type.
@@ -49,7 +52,27 @@ The ``pandocfilters`` package uses the following types:
 **``type Node map[string]Any``**:
   A map type.
 
-These types are only for readibility and ease of code writing and are a straight conversion from the unmarshalled json types.
+### Type casting
+Casting an `Any` type to a known type can be done with the following helper functions:
+
+**``func AsString(a Any) string``**
+
+**``func AsNode(a Any) Node``**
+
+**``func AsList(a Any) List``**
+
+These functions panic if a wrong conversion occurs. See the examples for more use cases.
+
+### Type creation
+Creating a new type can be done more easily using the following helper functions:
+
+**``func NewNode() Node``**
+
+**``func NewList(args ...Any) Node``**: This will create a new list using the arguments specified
+
+**``func NewListUnpack(args ...Any) Node``**: Same as the above, except that it will unpack any list in args. This is sometimes useful when wanting to encapsulate an existing list with Any objects.
+
+**``func Empty() List``**: Helper function to create a new List. Is the same as NewList() but more readable, as returning an empty List will delete the object. See `ToJSONFilters()` below.
 
 Available functions
 ----------------------
@@ -146,5 +169,5 @@ for developing your own pandocfilters.
     environments in LaTeX output, and to numbered theorems in HTML
     output.
 
-TODO from the python tool:  
+**TODO** from the python pandocfilters tool:  
 ``abc.py, gabc.py, graphviz.py, lilypond.py, platuml.py, tikz.py``

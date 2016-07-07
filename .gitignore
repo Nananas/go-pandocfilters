@@ -1,2 +1,4 @@
 pandocfilters-master/
 *.pdf
+
+*.sublime*
