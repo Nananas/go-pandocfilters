@@ -8,7 +8,7 @@ compatibility with standard markdown).
 
 package main
 
-import . "github.com/nananas/Pandocfilters/pandocfilters"
+import . "github.com/nananas/go-pandocfilters/pandocfilters"
 
 func main() {
 	ToJSONFilter(deflists)

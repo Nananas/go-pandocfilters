@@ -10,7 +10,7 @@ package main
 import (
 	"strings"
 
-	. "github.com/nananas/Pandocfilters/pandocfilters"
+	. "github.com/nananas/go-pandocfilters/pandocfilters"
 )
 
 func main() {

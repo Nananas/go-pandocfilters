@@ -11,13 +11,14 @@ package main
 import (
 	"strconv"
 
-	. "github.com/nananas/Pandocfilters/pandocfilters"
+	. "github.com/nananas/go-pandocfilters/pandocfilters"
 )
 
 var theoremcount int
 
 func main() {
 	theoremcount = 0
+	// Load()
 	ToJSONFilter(theorems)
 }
 
@@ -30,7 +31,7 @@ func theorems(key string, value Any, format string, meta Node) Any {
 
 		label := ""
 
-		if contains(classes, "theorem") {
+		if Contains(classes, "theorem") {
 			if format == "latex" {
 				if ident != "" {
 					label = "\\label{" + ident + "}"
@@ -67,15 +68,4 @@ func latex(x string) Node {
 
 func html(x string) Node {
 	return RawBlock("html", x)
-}
-
-func contains(slice List, value string) bool {
-	ok := false
-	for _, v := range slice {
-		if v == value {
-			ok = true
-		}
-	}
-
-	return ok
 }

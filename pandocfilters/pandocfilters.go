@@ -2,11 +2,10 @@ package pandocfilters
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"reflect"
+	"strings"
 )
 
 // IS KEY ALWAYS A STRING
@@ -20,6 +19,7 @@ import (
 // and Meta is the document's metadata as <Node>.
 type Action func(key string, value Any, format string, meta Node) Any
 type Any interface{}
+
 type List []Any
 type Node map[string]Any
 
@@ -40,11 +40,38 @@ func ToJSONFilter(action Action) {
 // empty list deletes the object.)
 //
 func ToJSONFilters(actions []Action) {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	// fmt.Println("START")
-	bytes, err := ioutil.ReadAll(os.Stdin)
 
-	// fmt.Println(string(bytes))
+	AST, format, meta := Load(FromStdin())
+
+	resultAST := Reduce(actions, AST, format, meta)
+	ToStdout(Save(resultAST))
+}
+
+func Reduce(actions []Action, AST List, format string, meta Node) Any {
+	return reduce(
+		func(x Any, action Action) Any {
+			return Walk(x, action, format, meta)
+			// return Walk(x, action, format, NewNode())
+		},
+		actions, AST)
+
+}
+
+func FromStdin() []byte {
+	bytes, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return bytes
+}
+
+func ToStdout(input []byte) {
+	os.Stdout.Write(input)
+}
+
+// Returns the AST, the format and the meta from the []byte input
+func Load(bytes []byte) (List, string, Node) {
 
 	var j interface{}
 	if err := json.Unmarshal(bytes, &j); err != nil {
@@ -56,63 +83,22 @@ func ToJSONFilters(actions []Action) {
 		format = os.Args[1]
 	}
 
-	c := convert(j)
-	// fmt.Println(m)
-	// fmt.Println(AsNode(m)["author"])
-	meta := AsNode(AsNode(AsList(c)[0])["unMeta"])
+	AST := convert(j)
 
-	r := reduce(
-		func(x Any, action Action) Any {
-			return Walk(x, action, format, meta)
-			// return Walk(x, action, format, NewNode())
-		},
-		actions, c)
+	meta := AsNode(AsNode(AsList(AST)[0])["unMeta"])
 
-	// fmt.Println(r)
-	// fmt.Println("")
-	encoded, err := json.Marshal(r)
+	return AsList(AST), format, meta
+}
+
+func Save(AST Any) []byte {
+
+	encoded, err := json.Marshal(AST)
 	if err != nil {
 		log.Println(err)
 	}
 
-	os.Stdout.Write(encoded)
-}
+	return encoded
 
-func convert(input interface{}) Any {
-
-	switch t := input.(type) {
-	case List:
-		fmt.Println("Already converted...")
-	case []interface{}: // List
-		list := make(List, 0)
-		for _, e := range t {
-			list = append(list, convert(e))
-		}
-
-		return list
-	case Node:
-		fmt.Println("Already converted...")
-	case map[string]interface{}: // Node
-		Node := make(Node, 0)
-		tt, ok := t["t"]
-		if !ok {
-			for k, v := range t {
-				Node[k] = convert(v)
-			}
-		} else {
-			Node["t"] = tt
-			Node["c"] = convert(t["c"])
-		}
-		return Node
-	case string: // end of tree, leaf
-		return string(input.(string))
-	case float64:
-		return float64(input.(float64))
-	default:
-		log.Println(input, ": is :", reflect.TypeOf(input))
-		log.Fatal("[FATAL] This should not happen")
-	}
-	return nil
 }
 
 // Walk a tree, applying an action to every object.
@@ -197,24 +183,13 @@ func NewListUnpack(args ...Any) List {
 	return l
 }
 
-func reduce(function func(c Any, n Action) Any, seq []Action, init Any) Any {
-
-	current := init
-	for _, next := range seq {
-		current = function(current, next)
-	}
-
-	return current
-
-}
-
 func Empty() List {
 	return NewList()
 }
 
 // Returns an attribute list, constructed from the
 // dictionary attrs.
-func Attributes(attributes Node) List {
+func AttributeList(attributes Node) List {
 	ident, ok := attributes["id"]
 	if !ok {
 		ident = ""
@@ -235,6 +210,65 @@ func Attributes(attributes Node) List {
 
 	result := NewList(ident, classes, keyvals)
 	return result
+}
+
+// Walks the tree x and returns concatenated string content,
+// leaving out all formatting.
+func Stringify(x Any) string {
+	result := []string{}
+
+	g := func(key string, val Any, format string, meta Node) Any {
+		log.Println(key)
+		switch key {
+		case "Str", "MetaString":
+			result = append(result, AsString(val))
+		case "Code", "Math":
+			result = append(result, AsString(AsList(val)[1]))
+		case "LineBreak":
+			result = append(result, " ")
+		case "Space":
+			result = append(result, " ")
+		}
+
+		return nil
+	}
+
+	log.Println(x)
+	Walk(x, g, "", NewNode())
+
+	log.Println(result)
+
+	return strings.Join(result, "")
+}
+
+// Retrieves the metadata variable 'name' from the 'meta' dict.
+func GetMeta(meta Node, name string) Any {
+
+	// fmt.Println("META:", meta)
+	// fmt.Println("NAME:", name)
+	if d, ok := meta[name]; ok {
+
+		data := AsNode(d)
+
+		if data["t"] == "MetaString" || data["t"] == "MetaBool" {
+			return AsString(data["c"])
+		} else if data["t"] == "MetaInlines" {
+			if len(AsList(data["c"])) == 1 {
+				return Stringify(data["c"])
+			}
+		} else if data["t"] == "MetaList" {
+			l := NewList()
+			for _, v := range AsList(data["c"]) {
+				l = append(l, Stringify(AsNode(v)["c"]))
+			}
+
+			return l
+		}
+
+	}
+
+	log.Fatal("Could not understand metadata variable ", name)
+	return nil
 }
 
 func elt(eltType string, numargs int) EltFunc {
@@ -302,6 +336,8 @@ var (
 )
 
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	Plain = elt("Plain", 1)
 	Para = elt("Para", 1)
 	CodeBlock = elt("CodeBlock", 2)
@@ -335,44 +371,5 @@ func init() {
 	Note = elt("Note", 1)
 	SoftBreak = elt("SoftBreak", 0)
 	Span = elt("Span", 2)
-
-}
-
-func AsString(input Any) string {
-	switch t := input.(type) {
-	case string:
-		return t
-	default:
-		log.Println("Trying to convert to String, but not a string type (", reflect.TypeOf(input), ") for object: ", input)
-		panic("")
-	}
-
-	return ""
-
-}
-
-func AsNode(input Any) Node {
-	switch t := input.(type) {
-	case Node:
-		return t
-	default:
-		log.Println("Trying to convert to Node, but not a node type (", reflect.TypeOf(input), ") for object: ", input)
-		panic("")
-	}
-
-	return nil
-
-}
-
-func AsList(input Any) List {
-	switch t := input.(type) {
-	case List:
-		return t
-	default:
-		log.Println("Trying to convert to List, but not a list type (", reflect.TypeOf(input), ") for object: ", input)
-		panic("")
-	}
-
-	return nil
 
 }

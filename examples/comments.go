@@ -13,7 +13,7 @@ package main
 import (
 	"regexp"
 
-	. "github.com/nananas/Pandocfilters/pandocfilters"
+	. "github.com/nananas/go-pandocfilters/pandocfilters"
 )
 
 var incomment = false

@@ -12,7 +12,7 @@ import (
 	"log"
 	"regexp"
 
-	. "github.com/nananas/Pandocfilters/pandocfilters"
+	. "github.com/nananas/go-pandocfilters/pandocfilters"
 )
 
 var pattern *regexp.Regexp
@@ -40,7 +40,7 @@ func metavars(key string, value Any, format string, meta Node) Any {
 			metatype, ok := result["t"]
 			if ok {
 				if metatype == "MetaInlines" {
-					return Span(Attributes(Node{
+					return Span(AttributeList(Node{
 						"class": "interpolated",
 						"field": field,
 					}), result["c"])

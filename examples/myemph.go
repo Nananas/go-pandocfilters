@@ -8,7 +8,7 @@ in latex.  Other output formats are unaffected.
 
 package main
 
-import . "github.com/nananas/Pandocfilters/pandocfilters"
+import . "github.com/nananas/go-pandocfilters/pandocfilters"
 
 func main() {
 	ToJSONFilter(myemph)
